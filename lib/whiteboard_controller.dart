@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -12,14 +11,14 @@ abstract class WhiteboardController {
   final streamController = StreamController<WhiteboardDraw>.broadcast();
   final sizeChangedController = StreamController<Size>.broadcast();
 
-  WhiteboardDraw draw;
+  late WhiteboardDraw draw;
 
   final bool readonly;
   final bool toolbox;
   final ToolboxOptions toolboxOptions;
 
   WhiteboardController({
-    @required this.readonly,
+    required this.readonly,
     this.toolbox = false,
     this.toolboxOptions = const ToolboxOptions(),
   });
@@ -42,8 +41,8 @@ abstract class WhiteboardController {
   }
 
   close() {
-    streamController?.close();
-    sizeChangedController?.close();
+    streamController.close();
+    sizeChangedController.close();
   }
 
   onPanUpdate(Offset position) {}
@@ -52,7 +51,9 @@ abstract class WhiteboardController {
 }
 
 class PlayControls {
-  Stream<WhiteboardDraw> onComplete() {}
+  Stream<WhiteboardDraw>? onComplete() {
+    return null;
+  }
 
   play() async {}
 

@@ -12,24 +12,24 @@ class ToolBox extends StatefulWidget {
   final Color color;
   final ToolboxOptions options;
 
-  ToolBox(
-      {
-      // @required this.width,
-      @required this.sketchController,
-      @required this.color,
-      @required this.options});
+  ToolBox({
+    // @required this.width,
+    required this.sketchController,
+    required this.color,
+    required this.options,
+  });
 
   @override
   _ToolBoxState createState() => _ToolBoxState();
 }
 
 class _ToolBoxState extends State<ToolBox> {
-  double brushSize;
-  Color brushColor;
-  bool erase;
-  double eraserSize;
+  late double brushSize;
+  late Color brushColor;
+  late bool erase;
+  late double eraserSize;
 
-  ToolBoxSelected selected;
+  late ToolBoxSelected selected;
 
   final brushSizes = <double>[10, 20, 30, 40];
   final brushColors = <Color>[
@@ -192,8 +192,8 @@ class _ToolBoxState extends State<ToolBox> {
   }
 
   Widget _buildToolButton(Icon icon,
-      {ToolBoxSelected select,
-      Function onPress,
+      {ToolBoxSelected? select,
+      Function? onPress,
       Color color = Colors.black54,
       double size = 30.0}) {
     return IconButton(
@@ -201,14 +201,10 @@ class _ToolBoxState extends State<ToolBox> {
       color: color,
       iconSize: size,
       onPressed: () {
-        if (select == null) {
+        if (selected == select)
           hide();
-          onPress();
-        } else {
-          if (selected == select)
-            hide();
-          else
-            show(select);
+        else {
+          if (select != null) show(select);
         }
       },
       highlightColor: Colors.transparent,

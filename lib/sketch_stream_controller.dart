@@ -9,7 +9,7 @@ import 'whiteboard_draw.dart';
 class SketchStreamController extends WhiteboardController {
   final completeController = StreamController<bool>.broadcast();
 
-  DrawChunkAnimator animator;
+  late DrawChunkAnimator animator;
 
   SketchStreamController() : super(readonly: true) {
     _init();
@@ -17,12 +17,9 @@ class SketchStreamController extends WhiteboardController {
 
   @override
   initializeSize(double width, double height) {
-    if (this.draw == null)
-      this.draw = WhiteboardDraw.empty(width: width, height: height);
-
     super.initializeSize(width, height);
 
-    animator?.updateSize(width, height);
+    animator.updateSize(width, height);
   }
 
   Stream<bool> onComplete() {
@@ -31,13 +28,13 @@ class SketchStreamController extends WhiteboardController {
 
   @override
   close() {
-    completeController?.close();
-    animator?.close();
+    completeController.close();
+    animator.close();
     super.close();
   }
 
   _init() {
-    animator?.close();
+    animator.close();
     animator = new DrawChunkAnimator(
         onChange: (draw) {
           this.draw = draw;
@@ -58,7 +55,7 @@ class SketchStreamController extends WhiteboardController {
       sizeChangedController.sink.add(this.draw.getSize());
       // });
     } else {}
-    animator?.addChunk(drawChunk);
+    animator.addChunk(drawChunk);
     // if (drawChunk.id == 0) {
     //   initializeSize(availbleSize.width, availbleSize.height);
     // }

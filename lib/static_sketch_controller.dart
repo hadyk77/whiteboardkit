@@ -1,15 +1,18 @@
 import 'dart:async';
+
 import 'package:whiteboardkit/whiteboard_controller.dart';
 
 import 'whiteboard_draw.dart';
 
 class StaticSketchController extends WhiteboardController {
-
   StaticSketchController(WhiteboardDraw draw) : super(readonly: true) {
     if (draw.lines.lastIndexWhere((element) => element.wipe == true) != -1)
       this.draw = draw.clone().copyWith(
-          lines: draw.lines.skip(
-              draw.lines.lastIndexWhere((element) => element.wipe == true)));
+            lines: draw.lines
+                .skip(draw.lines
+                    .lastIndexWhere((element) => element.wipe == true))
+                .toList(),
+          );
     else
       this.draw = draw.clone();
   }

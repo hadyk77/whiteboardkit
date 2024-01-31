@@ -7,15 +7,16 @@ import 'whiteboard_draw.dart';
 typedef void FirstChunkAdded(WhiteboardDraw draw);
 
 class DrawChunkAnimator extends DrawAnimator {
-  List<DrawChunk> _serializedChunks;
-  List<DrawChunk> _bufferChunks;
+  List<DrawChunk> _serializedChunks = [];
+  List<DrawChunk> _bufferChunks = [];
 
   bool sizeSet = false;
-  Size availbleSize;
+  Size availableSize = Size(0, 0);
 
-  DrawChunkAnimator(
-      {@required DrawChanged onChange, @required DrawCompleted onComplete})
-      : super(
+  DrawChunkAnimator({
+    required DrawChanged onChange,
+    required DrawCompleted onComplete,
+  }) : super(
           width: 0,
           height: 0,
           onChange: onChange,
@@ -29,7 +30,8 @@ class DrawChunkAnimator extends DrawAnimator {
     if (drawChunk.id == 0) {
       _serializedChunks.clear();
       this.finalDraw = WhiteboardDraw.empty(
-          width: drawChunk.draw.width, height: drawChunk.draw.height).getScaled(availbleSize.width,  availbleSize.height);
+              width: drawChunk.draw.width, height: drawChunk.draw.height)
+          .getScaled(availableSize.width, availableSize.height);
       await pause();
     }
 
@@ -66,20 +68,16 @@ class DrawChunkAnimator extends DrawAnimator {
       });
 
     if (DateTime.now().difference(drawChunk.createdAt).inSeconds > 60)
-      drawPartial.lines.forEach((line) {
+      drawPartial.lines?.forEach((line) {
         line.duration = 0;
       });
 
-    addLinesToQueue(drawPartial.lines);
+    addLinesToQueue(drawPartial.lines ?? []);
     await play();
   }
 
   @override
   updateSize(double width, double height) async {
-    if (availbleSize == null) {
-      availbleSize = Size(width, height);
-      return;
-    }
     super.updateSize(width, height);
   }
 }

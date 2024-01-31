@@ -5,7 +5,7 @@ import 'package:xml/xml.dart' as xml;
 
 part 'whiteboard_draw.g.dart';
 
-@JsonSerializable(nullable: false, explicitToJson: true)
+@JsonSerializable(explicitToJson: true)
 class WhiteboardDraw {
   List<Line> lines;
   double width;
@@ -26,7 +26,7 @@ class WhiteboardDraw {
   }
 
   WhiteboardDraw copyWith(
-      {String id, List<Line> lines, double width, double height}) {
+      {String? id, List<Line>? lines, double? width, double? height}) {
     return WhiteboardDraw(
       lines: lines ?? this.lines.map((line) => line.clone()).toList(),
       width: width ?? this.width,
@@ -35,7 +35,7 @@ class WhiteboardDraw {
   }
 
   factory WhiteboardDraw.empty(
-          {@required double width, @required double height}) =>
+          {required double width, required double height}) =>
       WhiteboardDraw(height: height, width: width, lines: []);
 
   // Duration get drawingDuration {
@@ -59,16 +59,15 @@ class WhiteboardDraw {
   Duration get drawingDuration {
     var duration = new Duration();
 
-    if (lines != null)
-      lines.forEach((line) {
-        duration += Duration(milliseconds: line.duration);
-      });
+    lines.forEach((line) {
+      duration += Duration(milliseconds: line.duration);
+    });
     return duration;
   }
 
   DrawChunker chunker(int seconds) => DrawChunker(this, seconds * 1000);
 
-  List<Line> getLinesWithoutWipe() {
+  List<Line>? getLinesWithoutWipe() {
     var lastWipeIndex = lines.lastIndexWhere((l) => l.wipe);
     var visibleLines =
         lastWipeIndex > -1 ? lines.sublist(lastWipeIndex) : lines;
@@ -114,9 +113,6 @@ class WhiteboardDraw {
       finalHeight = targetHeight;
       finalWidth = this.width / scale;
     }
-
-    if (finalWidth == double.nan) finalWidth = 0;
-    if (finalHeight == double.nan) finalHeight = 0;
 
     return Size(finalWidth, finalHeight);
   }
@@ -166,18 +162,19 @@ class WhiteboardDraw {
       var visibleSinceIndex = 0;
       if (this.lines.lastIndexWhere((element) => element.wipe == true) != -1)
         visibleSinceIndex =
-            draw.lines.lastIndexWhere((element) => element.wipe == true) + 1;
+            draw.lines.lastIndexWhere((element) => element.wipe == true) ??
+                0 + 1;
 
       if (!animation && visibleSinceIndex > 0) {
         draw.lines = draw.lines.skip(visibleSinceIndex + 1).toList();
         visibleSinceIndex = 0;
       }
 
-      var wipes = List<int>();
+      var wipes = <int>[];
 
-      for (var i = 0; i < draw.lines.length; i++) {
+      for (var i = 0; i < (draw.lines.length ?? 0); i++) {
         var line = draw.lines[i];
-        if (line.wipe) {
+        if (line.wipe == true) {
           wipes.add(i);
           continue;
         }
@@ -197,7 +194,7 @@ class WhiteboardDraw {
           });
           // pathsStrings.add(
           //     '<circle cx="${line.points[0].x}" cy="${line.points[0].y}" r="${width}" fill="${hexColor}" data-duration="${line.duration}" visibility="${visible ? "visible" : "hidden"}"/>');
-        } else if (line.points.length > 1) {
+        } else if ((line.points.length ?? 0) > 1) {
           var moveCommand = "M${line.points.first.x},${line.points.first.y}";
           var lineCommands =
               line.points.skip(1).map((p) => "L${p.x},${p.y}").join(' ');
@@ -223,13 +220,13 @@ class WhiteboardDraw {
       builder.attribute("width", draw.width);
       if (animation) builder.attribute("data-wipes", wipes.join(","));
     });
-    return builder.build().document.findElements("svg").first.toString();
+    return builder.buildDocument().findElements("svg").first.toString();
 
     // return '<svg height="${draw.height}" width="${draw.width}" data-wipes="${wipes.join(",")}" xmlns="http://www.w3.org/2000/svg" version="1.1">${pathsStrings.join('')}</svg>';
   }
 
   factory WhiteboardDraw.fromWhiteboardSVG(String svg) {
-    final document = xml.parse(svg);
+    final document = xml.XmlDocument.parse(svg);
     // print("document.toXmlString()");
     // print(document.toXmlString());
 
@@ -251,7 +248,7 @@ class WhiteboardDraw {
         .firstWhere((att) => att.name.local == "width")
         .value;
 
-    var lines = List<Line>();
+    var lines = <Line>[];
 
     svgElement.findElements("*").forEach((element) {
       if (element.name.local == "path") {
@@ -263,9 +260,8 @@ class WhiteboardDraw {
             .value;
         var durationAttr = element.attributes.firstWhere(
           (att) => att.name.local == "data-duration",
-          orElse: () => null,
         );
-        var duration = durationAttr == null ? 0 : int.parse(durationAttr.value);
+        var duration = int.parse(durationAttr.value);
         var points = element.attributes
             .firstWhere((att) => att.name.local == "d")
             .value
@@ -288,9 +284,8 @@ class WhiteboardDraw {
             element.attributes.firstWhere((att) => att.name.local == "r").value;
         var durationAttr = element.attributes.firstWhere(
           (att) => att.name.local == "data-duration",
-          orElse: () => null,
         );
-        var duration = durationAttr == null ? 0 : int.parse(durationAttr.value);
+        var duration = int.parse(durationAttr.value);
         var x = element.attributes
             .firstWhere((att) => att.name.local == "cx")
             .value;
@@ -308,10 +303,9 @@ class WhiteboardDraw {
 
     var wipesAttr = svgElement.attributes.firstWhere(
       (att) => att.name.local == "data-wipes",
-      orElse: () => null,
     );
 
-    var wipes = wipesAttr == null ? [] : wipesAttr.value.split(",");
+    var wipes = wipesAttr.value.split(",");
 
     wipes.forEach((wipe) {
       if (int.tryParse(wipe) != null)
@@ -326,7 +320,7 @@ class WhiteboardDraw {
   }
 }
 
-@JsonSerializable(nullable: false, explicitToJson: true)
+@JsonSerializable(explicitToJson: true)
 class Line {
 //  @JsonKey(fromJson: _offsetsFromList, toJson: _offsetsToList)
 //  List<Offset> points;
@@ -361,12 +355,13 @@ class Line {
         duration: duration);
   }
 
-  Line copyWith(
-      {List<Point> points,
-      Color color,
-      double width,
-      bool wipe,
-      int duration}) {
+  Line copyWith({
+    List<Point>? points,
+    Color? color,
+    double? width,
+    bool? wipe,
+    int? duration,
+  }) {
     return Line(
       points: points ?? this.points.map((p) => new Point(p.x, p.y)).toList(),
       color: color ?? this.color,

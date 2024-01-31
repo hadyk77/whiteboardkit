@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:flutter/widgets.dart';
+
 import 'whiteboard_draw.dart';
 
 typedef void DrawChanged(WhiteboardDraw draw);
@@ -15,30 +16,29 @@ class DrawAnimator {
   WhiteboardDraw finalDraw;
 
   @protected
-  Queue<Line> queued;
-  int _playId;
+  Queue<Line> queued = Queue<Line>();
+  late int? _playId;
 
   bool _skip = false;
 
   skip() => _skip = true;
 
-  Timer playDelay;
+  Timer? playDelay;
 
-  int _resizeId;
+  int? _resizeId;
   bool _resizeNeedResume = false;
 
   DrawAnimator(
-      {@required double width,
-      @required double height,
-      @required this.onChange,
-      @required this.onComplete})
+      {required double width,
+      required double height,
+      required this.onChange,
+      required this.onComplete})
       : finalDraw = WhiteboardDraw.empty(width: width, height: height) {
     queued = Queue.from([]);
     _playId = null;
   }
 
   updateSize(double width, double height) async {
-    if (_resizeId == null) _resizeNeedResume = _playId != null;
     var resizeId = _resizeId = new Random().nextInt(1000);
 
     await pause();
@@ -51,17 +51,18 @@ class DrawAnimator {
   _updateSize(int resizeId, double width, double height) async {
     if (_resizeId != resizeId) return;
 
-    var queuedlinesList = queued.map((e) => e.clone()).toList();
+    var queuedLinesList = queued.map((e) => e.clone()).toList();
 
     var scaledFromQueued = WhiteboardDraw(
-            lines: queuedlinesList.toList(),
+            lines: queuedLinesList.toList(),
             width: finalDraw.width,
             height: finalDraw.height)
         .getScaled(width, height);
 
     Queue<Line> newQueue = Queue.from([]);
-    for (var i = 0; i < queuedlinesList.length; i++) {
-      newQueue.add(scaledFromQueued.lines[i]);
+
+    for (var element in queuedLinesList) {
+      newQueue.add(element);
     }
 
     if (_resizeId != resizeId) return;
@@ -81,13 +82,13 @@ class DrawAnimator {
     finalDraw.lines = [];
     var drawScaled = draw.getScaled(finalDraw.width, finalDraw.height);
 
-    addLinesToQueue(drawScaled.lines);
+    addLinesToQueue(drawScaled.lines ?? []);
     await play();
   }
 
   @protected
   void addLinesToQueue(List<Line> lines) {
-    List<Line> list = List<Line>();
+    final list = <Line>[];
     lines.forEach((l) => list.add(l));
 
     queued.addAll(list);
@@ -112,18 +113,13 @@ class DrawAnimator {
   _play(int playIdLocal) async {
     if (_playId != playIdLocal) return;
 
-    if (queued.isEmpty) return;
+    if (queued.isEmpty == true) return;
 
     _skip = false;
 
-    if (finalDraw == null) {
-      _playId = null;
-      return;
-    }
-
     Future(() async {
       if (_playId != playIdLocal) return;
-      while (queued.isNotEmpty) {
+      while (queued.isNotEmpty == true) {
         var queuedLine = queued.first;
 
         var points =
@@ -131,7 +127,7 @@ class DrawAnimator {
         // if (queuedLine.lineIndex == finalDraw.lines.length - 1) {
         // points = points.skip(finalDraw.lines.last.points.length).toList();
         // } else {
-        finalDraw.lines.add(queuedLine.copyWith(points: []));
+        finalDraw.lines?.add(queuedLine.copyWith(points: []));
         // }
 
         if (queuedLine.points.length == 0 && !_skip && queuedLine.duration > 0)
@@ -142,8 +138,7 @@ class DrawAnimator {
           );
         else
           for (var point in points) {
-            var duration =
-                queuedLine.duration ~/ queuedLine.points.length;
+            var duration = queuedLine.duration ~/ queuedLine.points.length;
             if (!_skip && queuedLine.duration > 0)
               await Future.delayed(
                 Duration(
@@ -153,7 +148,7 @@ class DrawAnimator {
 
             if (playIdLocal != _playId) return;
 
-            finalDraw.lines.last.points.add(point);
+            finalDraw.lines?.last.points.add(point);
             // queuedLine.processedPoints = queuedLine.processedPoints + 1;
             if (!_skip) onChange(finalDraw.copyWith());
           }
